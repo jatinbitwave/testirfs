@@ -131,7 +131,7 @@ def main():
     with col1:
         tax_year = st.selectbox(
             "Tax Year",
-            [2025, 2024, 2023, 2022, 2021, 2020],
+            [2024, 2023, 2022, 2021, 2020],
             index=0
         )
     
