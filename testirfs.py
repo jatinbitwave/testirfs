@@ -66,7 +66,7 @@ def main():
         st.markdown("""
         ### Required Bitwave CSV Columns:
         - **action**: Transaction type ('sell' transactions will be processed)
-        - **asset**: Cryptocurrency symbol (e.g., "BTC", "ETH", "SOL")
+        - **asset**: Cryptocurrency symbol (e.g., "BTC", "ETH", "SOL") - Column H
         - **assetUnitAdj**: Amount of cryptocurrency sold (used for description)
         - **timestamp**: Sale date in format "YYYY-MM-DD HH:MM:SS UTC" (Column D - PRIMARY)
         - **timestampSEC**: Alternative Unix timestamp field (backup)
@@ -77,6 +77,9 @@ def main():
         - **shortTermGainLoss**: Short-term gain/loss from Bitwave
         - **longTermGainLoss**: Long-term gain/loss from Bitwave
         - **txnExchangeRate**: Exchange rate at transaction time (backup for proceeds calculation)
+        
+        ### Asset Breakdown Fix:
+        The script now correctly uses Column H ("asset") for the Asset Breakdown section instead of the formatted description.
         
         ### Timestamp Handling (FIXED):
         The script now PRIORITIZES the 'timestamp' column (Column D):
@@ -97,6 +100,7 @@ def main():
         ### Features:
         - ✅ Automatically filters 'sell' actions from your Bitwave export
         - ✅ FIXED: Now uses 'timestamp' column (Column D) as PRIMARY source
+        - ✅ FIXED: Asset Breakdown now uses Column H "asset" correctly
         - ✅ Maps lot IDs to determine accurate acquisition dates
         - ✅ Uses Bitwave's short/long-term classification for accuracy
         - ✅ Validates calculated gains against Bitwave's calculations
@@ -127,7 +131,7 @@ def main():
     with col1:
         tax_year = st.selectbox(
             "Tax Year",
-            [2024, 2023, 2022, 2021, 2020],
+            [2025, 2024, 2023, 2022, 2021, 2020],
             index=0
         )
     
@@ -298,11 +302,12 @@ def main():
                 total_gain_loss = sum(t['gain_loss'] for t in transactions)
                 st.metric("Net Gain/Loss", f"${total_gain_loss:,.2f}")
             
-            # Asset breakdown
+            # FIXED: Asset breakdown now uses the raw asset symbol from Column H
             with st.expander("💰 Asset Breakdown", expanded=False):
                 asset_summary = {}
                 for transaction in transactions:
-                    asset = transaction['description']
+                    # FIXED: Use the raw asset symbol instead of formatted description
+                    asset = transaction['asset']  # This is the raw asset symbol from Column H
                     if asset not in asset_summary:
                         asset_summary[asset] = {'count': 0, 'proceeds': 0, 'gain_loss': 0}
                     asset_summary[asset]['count'] += 1
@@ -535,6 +540,7 @@ def process_bitwave_transactions_fixed(df, tax_year, proceeds_column, exchange_r
             # Create transaction record
             transaction = {
                 'description': f"{abs(row['assetUnitAdj']):.8f} {row['asset']}".rstrip('0').rstrip('.'),  # Format: "22 SOL"
+                'asset': row['asset'],  # FIXED: Store raw asset symbol separately for breakdown
                 'date_acquired': date_acquired,
                 'date_sold': date_sold,
                 'proceeds': proceeds,
